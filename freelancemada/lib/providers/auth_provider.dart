@@ -16,7 +16,7 @@ class AuthProvider extends ChangeNotifier {
     final token = await ApiService.getToken();
     if (token == null) return false;
     try {
-      final data = await ApiService.get('profile');
+      final data = await ApiService.getMe();
       _user = User.fromJson(data);
       notifyListeners();
       return true;
@@ -31,14 +31,20 @@ class AuthProvider extends ChangeNotifier {
     _error = null;
     notifyListeners();
     try {
-      final data = await ApiService.post('login', {'email': email, 'password': password}, auth: false);
+      final data = await ApiService.login(email, password);
+      if (data['access'] == null) {
+        _error = _extractError(data);
+        _loading = false;
+        notifyListeners();
+        return false;
+      }
       await ApiService.saveTokens(data['access'], data['refresh']);
       _user = User.fromJson(data['user']);
       _loading = false;
       notifyListeners();
       return true;
-    } on ApiException catch (e) {
-      _error = e.message;
+    } catch (_) {
+      _error = 'Erreur réseau. Vérifiez votre connexion.';
       _loading = false;
       notifyListeners();
       return false;
@@ -47,54 +53,57 @@ class AuthProvider extends ChangeNotifier {
 
   Future<bool> register({
     required String nom,
+    String prenom = '',
     required String email,
     required String password,
     required String role,
     String telephone = '',
+    String ville = '',
   }) async {
     _loading = true;
     _error = null;
     notifyListeners();
     try {
-      final data = await ApiService.post('register', {
+      final data = await ApiService.register({
         'nom': nom,
+        'prenom': prenom,
         'email': email,
         'password': password,
         'role': role,
         'telephone': telephone,
-      }, auth: false);
+        'ville': ville,
+      });
+      if (data['access'] == null) {
+        _error = _extractError(data);
+        _loading = false;
+        notifyListeners();
+        return false;
+      }
       await ApiService.saveTokens(data['access'], data['refresh']);
       _user = User.fromJson(data['user']);
       _loading = false;
       notifyListeners();
       return true;
-    } on ApiException catch (e) {
-      _error = e.message;
+    } catch (_) {
+      _error = 'Erreur réseau. Vérifiez votre connexion.';
       _loading = false;
       notifyListeners();
       return false;
     }
   }
 
-  Future<void> loadProfile() async {
-    try {
-      final data = await ApiService.get('profile');
-      _user = User.fromJson(data);
-      notifyListeners();
-    } catch (_) {}
-  }
-
   Future<bool> updateProfile(Map<String, dynamic> profileData) async {
     _loading = true;
+    _error = null;
     notifyListeners();
     try {
-      final data = await ApiService.put('profile/update', profileData);
+      final data = await ApiService.updateMe(profileData);
       _user = User.fromJson(data);
       _loading = false;
       notifyListeners();
       return true;
-    } on ApiException catch (e) {
-      _error = e.message;
+    } catch (_) {
+      _error = 'Erreur lors de la mise à jour.';
       _loading = false;
       notifyListeners();
       return false;
@@ -105,5 +114,19 @@ class AuthProvider extends ChangeNotifier {
     await ApiService.clearTokens();
     _user = null;
     notifyListeners();
+  }
+
+  void clearError() {
+    _error = null;
+    notifyListeners();
+  }
+
+  String _extractError(Map<String, dynamic> data) {
+    for (final key in data.keys) {
+      final val = data[key];
+      if (val is List && val.isNotEmpty) return val.first.toString();
+      if (val is String) return val;
+    }
+    return 'Une erreur est survenue.';
   }
 }

@@ -1,22 +1,13 @@
 import 'package:flutter/material.dart';
 import '../core/constants.dart';
 import '../models/mission.dart';
+import 'gold_badge.dart';
 
 class MissionCard extends StatelessWidget {
   final Mission mission;
   final VoidCallback? onTap;
 
   const MissionCard({super.key, required this.mission, this.onTap});
-
-  Color _statutColor() {
-    switch (mission.statut) {
-      case 'en_attente': return Colors.orange;
-      case 'en_cours': return AppConstants.goldColor;
-      case 'termine': return AppConstants.successColor;
-      case 'annule': return AppConstants.errorColor;
-      default: return AppConstants.textMuted;
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -27,17 +18,7 @@ class MissionCard extends StatelessWidget {
         decoration: BoxDecoration(
           color: AppConstants.cardColor,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: AppConstants.goldColor.withValues(alpha: 0.25),
-            width: 1,
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.3),
-              blurRadius: 8,
-              offset: const Offset(0, 3),
-            ),
-          ],
+          border: Border.all(color: AppConstants.borderColor),
         ),
         child: Padding(
           padding: const EdgeInsets.all(16),
@@ -45,59 +26,93 @@ class MissionCard extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Expanded(
-                    child: Text(
-                      mission.titre,
-                      style: const TextStyle(
-                        color: AppConstants.textLight,
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          mission.titre,
+                          style: const TextStyle(
+                            color: AppConstants.textPrimary,
+                            fontSize: 15,
+                            fontWeight: FontWeight.w700,
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          mission.clientNom,
+                          style: const TextStyle(color: AppConstants.textMuted, fontSize: 12),
+                        ),
+                      ],
                     ),
                   ),
                   const SizedBox(width: 8),
-                  _StatutBadge(label: mission.statutLabel, color: _statutColor()),
+                  StatusBadge(mission.statut),
                 ],
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 10),
               Text(
                 mission.description,
-                style: const TextStyle(color: AppConstants.textMuted, fontSize: 13),
+                style: const TextStyle(color: AppConstants.textSecondary, fontSize: 13, height: 1.5),
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
               ),
               const SizedBox(height: 12),
-              Row(
+              // Catégorie & niveau
+              Wrap(
+                spacing: 6,
                 children: [
-                  _InfoChip(icon: Icons.attach_money, label: '${mission.budget.toStringAsFixed(0)} Ar'),
-                  const SizedBox(width: 8),
-                  _InfoChip(icon: Icons.category_outlined, label: mission.categorie),
-                  const Spacer(),
-                  _InfoChip(
-                    icon: Icons.people_outline,
-                    label: '${mission.nbCandidatures}',
-                    color: AppConstants.goldColor,
-                  ),
+                  _Chip(Icons.category_outlined, mission.categorie),
+                  _Chip(Icons.bar_chart, mission.niveauLabel),
                 ],
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 12),
+              const Divider(height: 1),
+              const SizedBox(height: 12),
               Row(
                 children: [
-                  const Icon(Icons.person_outline, size: 14, color: AppConstants.textMuted),
-                  const SizedBox(width: 4),
-                  Text(
-                    mission.clientNom,
-                    style: const TextStyle(color: AppConstants.textMuted, fontSize: 12),
+                  // Budget
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text('Budget', style: TextStyle(color: AppConstants.textMuted, fontSize: 11)),
+                      Text(
+                        '${mission.budget.toStringAsFixed(0)} Ar',
+                        style: const TextStyle(
+                          color: AppConstants.goldColor,
+                          fontWeight: FontWeight.w700,
+                          fontSize: 14,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(width: 20),
+                  // Deadline
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text('Deadline', style: TextStyle(color: AppConstants.textMuted, fontSize: 11)),
+                      Text(
+                        mission.deadline,
+                        style: const TextStyle(color: AppConstants.textSecondary, fontSize: 13),
+                      ),
+                    ],
                   ),
                   const Spacer(),
-                  const Icon(Icons.calendar_today_outlined, size: 12, color: AppConstants.textMuted),
-                  const SizedBox(width: 4),
-                  Text(
-                    mission.deadline,
-                    style: const TextStyle(color: AppConstants.textMuted, fontSize: 12),
+                  // Candidatures
+                  Row(
+                    children: [
+                      const Icon(Icons.people_outline, size: 14, color: AppConstants.textMuted),
+                      const SizedBox(width: 4),
+                      Text(
+                        '${mission.nbCandidatures}',
+                        style: const TextStyle(color: AppConstants.textSecondary, fontSize: 13),
+                      ),
+                    ],
                   ),
                 ],
               ),
@@ -109,49 +124,28 @@ class MissionCard extends StatelessWidget {
   }
 }
 
-class _StatutBadge extends StatelessWidget {
+class _Chip extends StatelessWidget {
+  final IconData icon;
   final String label;
-  final Color color;
-
-  const _StatutBadge({required this.label, required this.color});
+  const _Chip(this.icon, this.label);
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.15),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: color.withValues(alpha: 0.5)),
+        color: AppConstants.card2Color,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: AppConstants.borderColor),
       ),
-      child: Text(
-        label,
-        style: TextStyle(color: color, fontSize: 11, fontWeight: FontWeight.bold),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 12, color: AppConstants.textMuted),
+          const SizedBox(width: 4),
+          Text(label, style: const TextStyle(color: AppConstants.textSecondary, fontSize: 11)),
+        ],
       ),
-    );
-  }
-}
-
-class _InfoChip extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final Color color;
-
-  const _InfoChip({
-    required this.icon,
-    required this.label,
-    this.color = AppConstants.textMuted,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(icon, size: 14, color: color),
-        const SizedBox(width: 4),
-        Text(label, style: TextStyle(color: color, fontSize: 12)),
-      ],
     );
   }
 }

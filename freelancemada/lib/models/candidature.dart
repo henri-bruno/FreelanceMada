@@ -31,7 +31,7 @@ class Candidature {
       freelanceId: json['freelance'],
       freelanceNom: json['freelance_nom'] ?? '',
       message: json['message'] ?? '',
-      prixPropose: (json['prix_propose'] ?? 0).toDouble(),
+      prixPropose: double.tryParse((json['prix_propose'] ?? 0).toString()) ?? 0,
       delai: json['delai'] ?? 0,
       statut: json['statut'] ?? 'en_attente',
       dateCandidature: json['date_candidature'] ?? '',
@@ -40,10 +40,14 @@ class Candidature {
 
   String get statutLabel {
     switch (statut) {
-      case 'en_attente': return 'En attente';
-      case 'accepte': return 'Accepté';
-      case 'refuse': return 'Refusé';
-      default: return statut;
+      case 'en_attente':
+        return 'En attente';
+      case 'accepte':
+        return 'Accepté';
+      case 'refuse':
+        return 'Refusé';
+      default:
+        return statut;
     }
   }
 }

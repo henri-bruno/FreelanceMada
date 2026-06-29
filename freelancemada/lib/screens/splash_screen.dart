@@ -52,7 +52,7 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppConstants.backgroundColor,
+      backgroundColor: AppConstants.primaryColor,
       body: Center(
         child: FadeTransition(
           opacity: _fadeAnim,
@@ -61,38 +61,10 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Container(
-                  width: 100,
-                  height: 100,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: AppConstants.goldColor.withValues(alpha: 0.1),
-                    border: Border.all(color: AppConstants.goldColor, width: 2),
-                  ),
-                  child: const Icon(
-                    Icons.work_outline_rounded,
-                    size: 52,
-                    color: AppConstants.goldColor,
-                  ),
-                ),
-                const SizedBox(height: 24),
-                const Text(
-                  'FreeLance',
-                  style: TextStyle(
-                    color: AppConstants.goldColor,
-                    fontSize: 36,
-                    fontWeight: FontWeight.bold,
-                    letterSpacing: 2,
-                  ),
-                ),
-                const Text(
-                  'MADA',
-                  style: TextStyle(
-                    color: AppConstants.textLight,
-                    fontSize: 24,
-                    fontWeight: FontWeight.w300,
-                    letterSpacing: 6,
-                  ),
+                Image.asset(
+                  'assets/images/logo.png',
+                  width: 140,
+                  height: 140,
                 ),
                 const SizedBox(height: 8),
                 const Text(

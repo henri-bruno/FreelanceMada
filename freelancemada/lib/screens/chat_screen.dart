@@ -27,8 +27,7 @@ class _ChatScreenState extends State<ChatScreen> {
   void initState() {
     super.initState();
     _loadMessages();
-    // Polling toutes les 3 secondes
-    _pollingTimer = Timer.periodic(const Duration(seconds: 3), (_) => _loadMessages(silent: true));
+    _pollingTimer = Timer.periodic(const Duration(seconds: 4), (_) => _loadMessages(silent: true));
   }
 
   @override
@@ -41,23 +40,30 @@ class _ChatScreenState extends State<ChatScreen> {
 
   Future<void> _loadMessages({bool silent = false}) async {
     try {
-      final data = await ApiService.get('messages?user_id=${widget.receiverId}');
-      final messages = (data as List).map((e) => Message.fromJson(e)).toList();
-      setState(() {
-        _messages = messages;
-        if (!silent) _loading = false;
-      });
-      if (_scrollCtrl.hasClients) {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          _scrollCtrl.animateTo(
-            _scrollCtrl.position.maxScrollExtent,
-            duration: const Duration(milliseconds: 300),
-            curve: Curves.easeOut,
-          );
+      final data = await ApiService.getMessages(widget.receiverId);
+      final List<dynamic> results = data['results'] ?? data;
+      final messages = results.map((e) => Message.fromJson(e)).toList();
+      if (mounted) {
+        setState(() {
+          _messages = messages;
+          if (!silent) _loading = false;
         });
       }
+      _scrollToBottom();
     } catch (_) {
-      if (!silent) setState(() => _loading = false);
+      if (!silent && mounted) setState(() => _loading = false);
+    }
+  }
+
+  void _scrollToBottom() {
+    if (_scrollCtrl.hasClients) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _scrollCtrl.animateTo(
+          _scrollCtrl.position.maxScrollExtent,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeOut,
+        );
+      });
     }
   }
 
@@ -66,7 +72,7 @@ class _ChatScreenState extends State<ChatScreen> {
     if (text.isEmpty) return;
     _messageCtrl.clear();
     try {
-      await ApiService.post('messages', {
+      await ApiService.sendMessage({
         'receiver': widget.receiverId,
         'contenu': text,
       });
@@ -79,20 +85,24 @@ class _ChatScreenState extends State<ChatScreen> {
     final currentUser = context.read<AuthProvider>().user;
 
     return Scaffold(
-      backgroundColor: AppConstants.backgroundColor,
       appBar: AppBar(
         title: Row(
           children: [
             CircleAvatar(
               radius: 18,
-              backgroundColor: AppConstants.goldColor.withValues(alpha: 0.2),
+              backgroundColor: AppConstants.goldColor.withAlpha(40),
               child: Text(
                 widget.receiverNom.isNotEmpty ? widget.receiverNom[0].toUpperCase() : '?',
                 style: const TextStyle(color: AppConstants.goldColor, fontWeight: FontWeight.bold),
               ),
             ),
             const SizedBox(width: 10),
-            Text(widget.receiverNom, style: const TextStyle(fontSize: 16)),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(widget.receiverNom, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
+              ],
+            ),
           ],
         ),
       ),
@@ -103,8 +113,14 @@ class _ChatScreenState extends State<ChatScreen> {
                 ? const Center(child: CircularProgressIndicator(color: AppConstants.goldColor))
                 : _messages.isEmpty
                     ? const Center(
-                        child: Text('Démarrez la conversation !',
-                            style: TextStyle(color: AppConstants.textMuted)),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.chat_bubble_outline, size: 56, color: AppConstants.textMuted),
+                            SizedBox(height: 12),
+                            Text('Démarrez la conversation !', style: TextStyle(color: AppConstants.textMuted)),
+                          ],
+                        ),
                       )
                     : ListView.builder(
                         controller: _scrollCtrl,
@@ -117,10 +133,7 @@ class _ChatScreenState extends State<ChatScreen> {
                         },
                       ),
           ),
-          _MessageInput(
-            controller: _messageCtrl,
-            onSend: _sendMessage,
-          ),
+          _MessageInput(controller: _messageCtrl, onSend: _sendMessage),
         ],
       ),
     );
@@ -138,13 +151,11 @@ class _MessageBubble extends StatelessWidget {
     return Align(
       alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
       child: Container(
-        margin: const EdgeInsets.only(bottom: 10),
+        margin: const EdgeInsets.only(bottom: 8),
         constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.72),
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
         decoration: BoxDecoration(
-          color: isMe
-              ? AppConstants.goldColor.withValues(alpha: 0.25)
-              : AppConstants.cardColor,
+          color: isMe ? AppConstants.goldColor.withAlpha(60) : AppConstants.cardColor,
           borderRadius: BorderRadius.only(
             topLeft: const Radius.circular(16),
             topRight: const Radius.circular(16),
@@ -152,9 +163,7 @@ class _MessageBubble extends StatelessWidget {
             bottomRight: Radius.circular(isMe ? 4 : 16),
           ),
           border: Border.all(
-            color: isMe
-                ? AppConstants.goldColor.withValues(alpha: 0.4)
-                : const Color(0xFF2A2A4A),
+            color: isMe ? AppConstants.goldColor.withAlpha(100) : AppConstants.borderColor,
           ),
         ),
         child: Column(
@@ -162,7 +171,7 @@ class _MessageBubble extends StatelessWidget {
           children: [
             Text(
               message.contenu,
-              style: const TextStyle(color: AppConstants.textLight, fontSize: 14),
+              style: const TextStyle(color: AppConstants.textPrimary, fontSize: 14, height: 1.4),
             ),
             const SizedBox(height: 4),
             Text(
@@ -187,8 +196,8 @@ class _MessageInput extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
       decoration: const BoxDecoration(
-        color: AppConstants.primaryColor,
-        border: Border(top: BorderSide(color: Color(0xFF2A2A4A))),
+        color: AppConstants.surfaceColor,
+        border: Border(top: BorderSide(color: AppConstants.borderColor)),
       ),
       child: SafeArea(
         top: false,
@@ -197,7 +206,6 @@ class _MessageInput extends StatelessWidget {
             Expanded(
               child: TextField(
                 controller: controller,
-                style: const TextStyle(color: AppConstants.textLight),
                 maxLines: null,
                 decoration: InputDecoration(
                   hintText: 'Écrire un message...',
@@ -222,7 +230,7 @@ class _MessageInput extends StatelessWidget {
                   color: AppConstants.goldColor,
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(Icons.send_rounded, color: AppConstants.primaryColor, size: 20),
+                child: const Icon(Icons.send_rounded, color: Colors.black, size: 20),
               ),
             ),
           ],

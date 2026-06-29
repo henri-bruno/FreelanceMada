@@ -5,6 +5,8 @@ import 'package:provider/provider.dart';
 import 'core/theme.dart';
 import 'providers/auth_provider.dart';
 import 'providers/mission_provider.dart';
+import 'providers/service_provider.dart';
+import 'providers/notification_provider.dart';
 import 'screens/splash_screen.dart';
 import 'screens/login_screen.dart';
 import 'screens/register_screen.dart';
@@ -16,6 +18,11 @@ import 'screens/chat_screen.dart';
 import 'screens/profile_screen.dart';
 import 'screens/dashboard_screen.dart';
 import 'screens/create_mission_screen.dart';
+import 'screens/service_list_screen.dart';
+import 'screens/service_detail_screen.dart';
+import 'screens/contrats_screen.dart';
+import 'screens/notifications_screen.dart';
+import 'screens/freelance_list_screen.dart';
 
 void main() {
   runApp(
@@ -23,6 +30,8 @@ void main() {
       providers: [
         ChangeNotifierProvider(create: (_) => AuthProvider()),
         ChangeNotifierProvider(create: (_) => MissionProvider()),
+        ChangeNotifierProvider(create: (_) => ServiceProvider()),
+        ChangeNotifierProvider(create: (_) => NotificationProvider()),
       ],
       child: const FreeLanceMadaApp(),
     ),
@@ -32,36 +41,51 @@ void main() {
 final _router = GoRouter(
   initialLocation: '/',
   routes: [
-    GoRoute(path: '/', builder: (ctx, state) => const SplashScreen()),
-    GoRoute(path: '/login', builder: (ctx, state) => const LoginScreen()),
-    GoRoute(path: '/register', builder: (ctx, state) => const RegisterScreen()),
-    GoRoute(path: '/home', builder: (ctx, state) => const HomeScreen()),
-    GoRoute(path: '/missions', builder: (ctx, state) => const MissionListScreen()),
-    GoRoute(path: '/missions/create', builder: (ctx, state) => const CreateMissionScreen()),
+    GoRoute(path: '/', builder: (ctx, _) => const SplashScreen()),
+    GoRoute(path: '/login', builder: (ctx, _) => const LoginScreen()),
+    GoRoute(path: '/register', builder: (ctx, _) => const RegisterScreen()),
+    GoRoute(path: '/home', builder: (ctx, _) => const HomeScreen()),
+
+    // Missions
+    GoRoute(path: '/missions', builder: (ctx, _) => const MissionListScreen()),
+    GoRoute(path: '/missions/create', builder: (ctx, _) => const CreateMissionScreen()),
     GoRoute(
-      path: '/mission/:id',
-      builder: (_, state) {
-        final id = int.parse(state.pathParameters['id']!);
-        return MissionDetailScreen(missionId: id);
-      },
+      path: '/missions/:id',
+      builder: (_, state) => MissionDetailScreen(missionId: int.parse(state.pathParameters['id']!)),
     ),
     GoRoute(
-      path: '/apply/:id',
-      builder: (_, state) {
-        final id = int.parse(state.pathParameters['id']!);
-        return ApplyScreen(missionId: id);
-      },
+      path: '/missions/:id/apply',
+      builder: (_, state) => ApplyScreen(missionId: int.parse(state.pathParameters['id']!)),
     ),
+
+    // Services
+    GoRoute(path: '/services', builder: (ctx, _) => const ServiceListScreen()),
     GoRoute(
-      path: '/chat/:userId/:userName',
-      builder: (_, state) {
-        final userId = int.parse(state.pathParameters['userId']!);
-        final userName = state.pathParameters['userName']!;
-        return ChatScreen(receiverId: userId, receiverNom: userName);
-      },
+      path: '/services/:id',
+      builder: (_, state) => ServiceDetailScreen(serviceId: int.parse(state.pathParameters['id']!)),
     ),
-    GoRoute(path: '/profile', builder: (ctx, state) => const ProfileScreen()),
-    GoRoute(path: '/dashboard', builder: (ctx, state) => const DashboardScreen()),
+
+    // Freelances
+    GoRoute(path: '/freelances', builder: (ctx, _) => const FreelanceListScreen()),
+
+    // Contrats
+    GoRoute(path: '/contrats', builder: (ctx, _) => const ContratsScreen()),
+
+    // Chat
+    GoRoute(
+      path: '/chat/:userId',
+      builder: (_, state) => ChatScreen(
+        receiverId: int.parse(state.pathParameters['userId']!),
+        receiverNom: state.uri.queryParameters['nom'] ?? 'Utilisateur',
+      ),
+    ),
+
+    // Profil & Dashboard
+    GoRoute(path: '/profile', builder: (ctx, _) => const ProfileScreen()),
+    GoRoute(path: '/dashboard', builder: (ctx, _) => const DashboardScreen()),
+
+    // Notifications
+    GoRoute(path: '/notifications', builder: (ctx, _) => const NotificationsScreen()),
   ],
 );
 
@@ -73,7 +97,7 @@ class FreeLanceMadaApp extends StatelessWidget {
     return MaterialApp.router(
       title: 'FreeLanceMada',
       debugShowCheckedModeBanner: false,
-      theme: AppTheme.darkTheme,
+      theme: AppTheme.dark,
       routerConfig: _router,
     );
   }

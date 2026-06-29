@@ -1,103 +1,104 @@
 import 'package:flutter/material.dart';
 import '../models/mission.dart';
-import '../models/candidature.dart';
 import '../services/api_service.dart';
 
 class MissionProvider extends ChangeNotifier {
   List<Mission> _missions = [];
-  Mission? _selectedMission;
-  List<Candidature> _candidatures = [];
   bool _loading = false;
   String? _error;
+  int _count = 0;
+  int _currentPage = 1;
+  bool _hasMore = true;
 
   List<Mission> get missions => _missions;
-  Mission? get selectedMission => _selectedMission;
-  List<Candidature> get candidatures => _candidatures;
   bool get loading => _loading;
   String? get error => _error;
+  int get count => _count;
+  bool get hasMore => _hasMore;
 
-  Future<void> fetchMissions({String? search, String? statut, String? categorie}) async {
+  Future<void> loadMissions({
+    String? search,
+    String? statut,
+    String? categorie,
+    bool mine = false,
+    bool reset = true,
+  }) async {
+    if (reset) {
+      _currentPage = 1;
+      _hasMore = true;
+      _missions = [];
+    }
+    if (!_hasMore) return;
     _loading = true;
     _error = null;
+    if (reset) notifyListeners();
+
+    try {
+      final data = await ApiService.getMissions(
+        search: search,
+        statut: statut,
+        categorie: categorie,
+        mine: mine,
+        page: _currentPage,
+      );
+      final List<dynamic> results = data['results'] ?? data;
+      final missions = results.map((m) => Mission.fromJson(m)).toList();
+      _count = data['count'] ?? missions.length;
+      if (reset) {
+        _missions = missions;
+      } else {
+        _missions.addAll(missions);
+      }
+      _hasMore = data['next'] != null;
+      _currentPage++;
+    } catch (_) {
+      _error = 'Erreur lors du chargement des missions.';
+    }
+    _loading = false;
     notifyListeners();
-    try {
-      String path = 'missions';
-      final params = <String>[];
-      if (search != null && search.isNotEmpty) params.add('search=$search');
-      if (statut != null && statut.isNotEmpty) params.add('statut=$statut');
-      if (categorie != null && categorie.isNotEmpty) params.add('categorie=$categorie');
-      if (params.isNotEmpty) path += '?${params.join('&')}';
-
-      final data = await ApiService.get(path);
-      _missions = (data as List).map((e) => Mission.fromJson(e)).toList();
-    } on ApiException catch (e) {
-      _error = e.message;
-    } finally {
-      _loading = false;
-      notifyListeners();
-    }
   }
 
-  Future<Mission?> fetchMissionDetail(int id) async {
+  Future<Mission?> getMission(int id) async {
     try {
-      final data = await ApiService.get('missions/$id');
-      _selectedMission = Mission.fromJson(data);
-      notifyListeners();
-      return _selectedMission;
-    } on ApiException catch (e) {
-      _error = e.message;
-      notifyListeners();
-      return null;
-    }
-  }
-
-  Future<bool> createMission(Map<String, dynamic> missionData) async {
-    _loading = true;
-    notifyListeners();
-    try {
-      final data = await ApiService.post('missions', missionData);
-      final mission = Mission.fromJson(data);
-      _missions.insert(0, mission);
-      _loading = false;
-      notifyListeners();
-      return true;
-    } on ApiException catch (e) {
-      _error = e.message;
-      _loading = false;
-      notifyListeners();
-      return false;
-    }
-  }
-
-  Future<bool> applyToMission(int missionId, Map<String, dynamic> data) async {
-    try {
-      await ApiService.post('apply', {'mission': missionId, ...data});
-      return true;
-    } on ApiException catch (e) {
-      _error = e.message;
-      notifyListeners();
-      return false;
-    }
-  }
-
-  Future<void> fetchCandidatures(int missionId) async {
-    try {
-      final data = await ApiService.get('mission/$missionId/applications');
-      _candidatures = (data as List).map((e) => Candidature.fromJson(e)).toList();
-      notifyListeners();
-    } catch (_) {}
-  }
-
-  Future<Map<String, dynamic>?> fetchDashboard() async {
-    try {
-      return await ApiService.get('dashboard');
+      final data = await ApiService.getMission(id);
+      return Mission.fromJson(data);
     } catch (_) {
       return null;
     }
   }
 
-  void clearError() {
-    _error = null;
-    notifyListeners();
+  Future<bool> createMission(Map<String, dynamic> data) async {
+    try {
+      final result = await ApiService.createMission(data);
+      if (result['id'] != null) {
+        _missions.insert(0, Mission.fromJson(result));
+        notifyListeners();
+        return true;
+      }
+      return false;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  Future<bool> updateMission(int id, Map<String, dynamic> data) async {
+    try {
+      final result = await ApiService.updateMission(id, data);
+      final idx = _missions.indexWhere((m) => m.id == id);
+      if (idx != -1) _missions[idx] = Mission.fromJson(result);
+      notifyListeners();
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  Future<bool> deleteMission(int id) async {
+    final ok = await ApiService.deleteMission(id);
+    if (ok) {
+      _missions.removeWhere((m) => m.id == id);
+      notifyListeners();
+    }
+    return ok;
   }
 }

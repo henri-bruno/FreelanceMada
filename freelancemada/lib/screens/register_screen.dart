@@ -3,7 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../core/constants.dart';
 import '../providers/auth_provider.dart';
-import '../widgets/custom_button.dart';
+// custom_button removed;
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -57,7 +57,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   Widget build(BuildContext context) {
     final auth = context.watch<AuthProvider>();
     return Scaffold(
-      backgroundColor: AppConstants.backgroundColor,
+      backgroundColor: AppConstants.primaryColor,
       appBar: AppBar(
         title: const Text('Inscription'),
         leading: IconButton(
@@ -76,7 +76,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 const Text(
                   'Créer un compte',
                   style: TextStyle(
-                    color: AppConstants.textLight,
+                    color: AppConstants.textPrimary,
                     fontSize: 26,
                     fontWeight: FontWeight.bold,
                   ),
@@ -90,7 +90,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 // Sélection du rôle
                 const Text(
                   'Je suis un...',
-                  style: TextStyle(color: AppConstants.textLight, fontWeight: FontWeight.w600),
+                  style: TextStyle(color: AppConstants.textPrimary, fontWeight: FontWeight.w600),
                 ),
                 const SizedBox(height: 12),
                 Row(
@@ -115,7 +115,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 const SizedBox(height: 24),
                 TextFormField(
                   controller: _nomCtrl,
-                  style: const TextStyle(color: AppConstants.textLight),
+                  style: const TextStyle(color: AppConstants.textPrimary),
                   decoration: const InputDecoration(
                     labelText: 'Nom complet',
                     prefixIcon: Icon(Icons.person_outline),
@@ -126,7 +126,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 TextFormField(
                   controller: _emailCtrl,
                   keyboardType: TextInputType.emailAddress,
-                  style: const TextStyle(color: AppConstants.textLight),
+                  style: const TextStyle(color: AppConstants.textPrimary),
                   decoration: const InputDecoration(
                     labelText: 'Email',
                     prefixIcon: Icon(Icons.email_outlined),
@@ -137,7 +137,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 TextFormField(
                   controller: _telCtrl,
                   keyboardType: TextInputType.phone,
-                  style: const TextStyle(color: AppConstants.textLight),
+                  style: const TextStyle(color: AppConstants.textPrimary),
                   decoration: const InputDecoration(
                     labelText: 'Téléphone (optionnel)',
                     prefixIcon: Icon(Icons.phone_outlined),
@@ -147,7 +147,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 TextFormField(
                   controller: _passwordCtrl,
                   obscureText: _obscure,
-                  style: const TextStyle(color: AppConstants.textLight),
+                  style: const TextStyle(color: AppConstants.textPrimary),
                   decoration: InputDecoration(
                     labelText: 'Mot de passe',
                     prefixIcon: const Icon(Icons.lock_outlined),
@@ -160,11 +160,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   validator: (v) => v == null || v.length < 6 ? 'Minimum 6 caractères' : null,
                 ),
                 const SizedBox(height: 32),
-                GoldButton(
-                  label: 'S\'inscrire',
-                  loading: auth.loading,
-                  onPressed: _register,
-                  icon: Icons.person_add_outlined,
+                ElevatedButton.icon(
+                  onPressed: auth.loading ? null : _register,
+                  icon: auth.loading
+                      ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(color: Colors.black, strokeWidth: 2))
+                      : const Icon(Icons.person_add_outlined),
+                  label: const Text('S\'inscrire'),
                 ),
                 const SizedBox(height: 20),
                 Row(
@@ -237,7 +238,7 @@ class _RoleCard extends StatelessWidget {
               Text(
                 label,
                 style: TextStyle(
-                  color: selected ? AppConstants.goldColor : AppConstants.textLight,
+                  color: selected ? AppConstants.goldColor : AppConstants.textPrimary,
                   fontWeight: FontWeight.bold,
                   fontSize: 15,
                 ),
