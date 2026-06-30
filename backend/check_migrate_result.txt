@@ -1,0 +1,9 @@
+============================================================
+FREELANCEMADA - MIGRATION SUPABASE
+============================================================
+
+[1] Configuration Django...
+    ✓ Django configuré
+
+[2] Test connexion Supabase...
+    ✗ Erreur connexion: could not translate host name "db.uygdschelfrkajzaxink.supabase.co" to address: Name or service not known
