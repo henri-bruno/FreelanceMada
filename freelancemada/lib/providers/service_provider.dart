@@ -62,11 +62,14 @@ class ServiceProvider extends ChangeNotifier {
     }
   }
 
-  Future<bool> createService(Map<String, dynamic> data) async {
+  Future<bool> createService(Map<String, dynamic> serviceData, Map<String, dynamic> packageData) async {
     try {
-      final result = await ApiService.createService(data);
+      final result = await ApiService.createService(serviceData);
       if (result['id'] != null) {
-        _services.insert(0, Service.fromJson(result));
+        final serviceId = result['id'];
+        await ApiService.createServicePackage(serviceId, packageData);
+        final updatedServiceData = await ApiService.getService(serviceId);
+        _services.insert(0, Service.fromJson(updatedServiceData));
         notifyListeners();
         return true;
       }

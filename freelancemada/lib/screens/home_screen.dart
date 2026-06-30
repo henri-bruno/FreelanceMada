@@ -180,7 +180,7 @@ class _HomeTab extends StatelessWidget {
                 if (user?.isFreelance == true) ...[
                   _FreelanceBanner(
                     onMissions: () => context.push('/missions'),
-                    onServices: () => context.push('/services'),
+                    onServices: () => context.push('/services/create'),
                   ),
                   const SizedBox(height: 28),
                 ],

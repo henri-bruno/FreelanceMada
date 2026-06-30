@@ -29,14 +29,33 @@ class _MissionDetailScreenState extends State<MissionDetailScreen> {
   Future<void> _load() async {
     try {
       final mData = await ApiService.getMission(widget.missionId);
-      final cData = await ApiService.getCandidatures(missionId: widget.missionId);
-      if (mounted) setState(() {
-        _mission = Mission.fromJson(mData);
-        _candidatures = cData['results'] ?? cData;
-        _loading = false;
-      });
+      final mission = Mission.fromJson(mData);
+
+      if (!mounted) return;
+      final user = context.read<AuthProvider>().user;
+      final isOwner = user?.id == mission.clientId;
+
+      List<dynamic> candidatures = [];
+      if (isOwner) {
+        final cData = await ApiService.getCandidatures(missionId: widget.missionId);
+        if (cData is List) {
+          candidatures = cData;
+        } else if (cData is Map && cData['results'] != null) {
+          candidatures = cData['results'];
+        }
+      }
+
+      if (mounted) {
+        setState(() {
+          _mission = mission;
+          _candidatures = candidatures;
+          _loading = false;
+        });
+      }
     } catch (_) {
-      if (mounted) setState(() => _loading = false);
+      if (mounted) {
+        setState(() => _loading = false);
+      }
     }
   }
 
@@ -44,9 +63,11 @@ class _MissionDetailScreenState extends State<MissionDetailScreen> {
     try {
       await ApiService.updateCandidature(candidatureId, {'statut': 'accepte'});
       await _load();
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Candidature acceptée !')),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Candidature acceptée !')),
+        );
+      }
     } catch (_) {}
   }
 

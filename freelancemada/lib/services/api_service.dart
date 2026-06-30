@@ -199,8 +199,17 @@ class ApiService {
     return jsonDecode(res.body);
   }
 
+  static Future<Map<String, dynamic>> createServicePackage(int serviceId, Map<String, dynamic> data) async {
+    final res = await http.post(
+      Uri.parse('${AppConstants.baseUrl}/services/$serviceId/packages/'),
+      headers: await _headers(),
+      body: jsonEncode(data),
+    );
+    return jsonDecode(res.body);
+  }
+
   // ── Candidatures ────────────────────────────────────────────
-  static Future<Map<String, dynamic>> getCandidatures({int? missionId}) async {
+  static Future<dynamic> getCandidatures({int? missionId}) async {
     final params = <String, String>{};
     if (missionId != null) params['mission_id'] = missionId.toString();
     final res = await http.get(

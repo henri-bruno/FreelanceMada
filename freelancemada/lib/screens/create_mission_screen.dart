@@ -189,7 +189,7 @@ class _CreateMissionScreenState extends State<CreateMissionScreen> {
 
               // Niveau
               DropdownButtonFormField<String>(
-                value: _niveau,
+                initialValue: _niveau,
                 dropdownColor: AppConstants.cardColor,
                 decoration: const InputDecoration(labelText: 'Niveau requis', prefixIcon: Icon(Icons.bar_chart)),
                 items: const [

@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 class AppConstants {
   // Pour Chrome/Web et Windows desktop : localhost
   // Pour téléphone Android réel : adresse IP du PC sur le réseau WiFi
-  static const String baseUrl = 'http://192.168.88.68:8000/api';
+  static const String baseUrl = 'https://freelancemada.onrender.com/api';
 
   // ── Palette Noir + Or ──────────────────────────────────────
   static const Color primaryColor   = Color(0xFF0A0A0F);

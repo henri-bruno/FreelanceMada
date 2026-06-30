@@ -18,6 +18,7 @@ class ServiceDetailScreen extends StatefulWidget {
 
 class _ServiceDetailScreenState extends State<ServiceDetailScreen> {
   Service? _service;
+  List<dynamic> _avis = [];
   bool _loading = true;
   String _packageSelectionne = 'basic';
 
@@ -30,7 +31,14 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen> {
   Future<void> _load() async {
     try {
       final data = await ApiService.getService(widget.serviceId);
-      if (mounted) setState(() { _service = Service.fromJson(data); _loading = false; });
+      final avisData = await ApiService.getAvis(serviceId: widget.serviceId);
+      if (mounted) {
+        setState(() {
+          _service = Service.fromJson(data);
+          _avis = avisData;
+          _loading = false;
+        });
+      }
     } catch (_) {
       if (mounted) setState(() => _loading = false);
     }
@@ -42,6 +50,87 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen> {
       if (p.niveau == _packageSelectionne) return p;
     }
     return _service!.packages.isNotEmpty ? _service!.packages.first : null;
+  }
+
+  Future<void> _laisserAvis() async {
+    final commentCtrl = TextEditingController();
+    int note = 5;
+
+    await showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (context, setStateDialog) => AlertDialog(
+          backgroundColor: AppConstants.surfaceColor,
+          title: const Text('Laisser un avis', style: TextStyle(color: AppConstants.goldColor)),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('Note :', style: TextStyle(color: AppConstants.textSecondary)),
+              Row(
+                children: List.generate(5, (index) {
+                  final starIndex = index + 1;
+                  return IconButton(
+                    icon: Icon(
+                      starIndex <= note ? Icons.star : Icons.star_border,
+                      color: AppConstants.goldColor,
+                    ),
+                    onPressed: () {
+                      setStateDialog(() => note = starIndex);
+                    },
+                  );
+                }),
+              ),
+              const SizedBox(height: 12),
+              const Text('Commentaire :', style: TextStyle(color: AppConstants.textSecondary)),
+              const SizedBox(height: 8),
+              TextField(
+                controller: commentCtrl,
+                maxLines: 3,
+                style: const TextStyle(color: AppConstants.textPrimary),
+                decoration: const InputDecoration(
+                  hintText: 'Votre avis sur ce service...',
+                  hintStyle: TextStyle(color: AppConstants.textMuted),
+                  border: OutlineInputBorder(),
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Annuler', style: TextStyle(color: AppConstants.textMuted)),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                if (commentCtrl.text.trim().isEmpty) return;
+                final messenger = ScaffoldMessenger.of(context);
+                final navigator = Navigator.of(ctx);
+                try {
+                  final s = _service!;
+                  await ApiService.createAvis({
+                    'service': s.id,
+                    'note': note,
+                    'commentaire': commentCtrl.text.trim(),
+                    'cible': s.freelanceId,
+                  });
+                  navigator.pop();
+                  _load();
+                  messenger.showSnackBar(
+                    const SnackBar(content: Text('Avis ajouté avec succès !'), backgroundColor: AppConstants.successColor),
+                  );
+                } catch (_) {
+                  messenger.showSnackBar(
+                    const SnackBar(content: Text('Erreur lors de l\'ajout de l\'avis.'), backgroundColor: AppConstants.errorColor),
+                  );
+                }
+              },
+              child: const Text('Publier'),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   @override
@@ -62,7 +151,7 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen> {
             flexibleSpace: FlexibleSpaceBar(
               background: s.imagePrincipale != null
                   ? Image.network(s.imagePrincipale!, fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) => Container(color: AppConstants.card2Color))
+                      errorBuilder: (_, _, _) => Container(color: AppConstants.card2Color))
                   : Container(
                       color: AppConstants.card2Color,
                       child: const Icon(Icons.work_outline, size: 60, color: AppConstants.textMuted),
@@ -160,6 +249,81 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen> {
                     ),
                     if (_selectedPackage != null) _PackageDetail(pkg: _selectedPackage!),
                   ],
+                  // Section Avis
+                  const SizedBox(height: 24),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        'Avis & Commentaires',
+                        style: TextStyle(color: AppConstants.textPrimary, fontWeight: FontWeight.w700, fontSize: 16),
+                      ),
+                      if (user != null && user.id != s.freelanceId)
+                        TextButton.icon(
+                          onPressed: _laisserAvis,
+                          icon: const Icon(Icons.rate_review_outlined, size: 16, color: AppConstants.goldColor),
+                          label: const Text('Laisser un avis', style: TextStyle(color: AppConstants.goldColor, fontSize: 13)),
+                        ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  if (_avis.isEmpty)
+                    const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 16),
+                      child: Text('Aucun avis pour le moment', style: TextStyle(color: AppConstants.textMuted, fontSize: 14)),
+                    )
+                  else
+                    ..._avis.map((a) {
+                      final note = a['note'] ?? 0;
+                      final dateStr = a['date'] != null ? a['date'].toString().split('T').first : '';
+                      return Container(
+                        margin: const EdgeInsets.only(bottom: 12),
+                        padding: const EdgeInsets.all(14),
+                        decoration: BoxDecoration(
+                          color: AppConstants.cardColor,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: AppConstants.borderColor),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                UserAvatar(nom: a['auteur_nom'] ?? 'Client', radius: 16),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        a['auteur_nom'] ?? 'Client',
+                                        style: const TextStyle(color: AppConstants.textPrimary, fontWeight: FontWeight.w600, fontSize: 13),
+                                      ),
+                                      Row(
+                                        children: List.generate(5, (index) => Icon(
+                                          index < note ? Icons.star : Icons.star_border,
+                                          size: 14,
+                                          color: AppConstants.goldColor,
+                                        )),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                Text(
+                                  dateStr,
+                                  style: const TextStyle(color: AppConstants.textMuted, fontSize: 11),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              a['commentaire'] ?? '',
+                              style: const TextStyle(color: AppConstants.textSecondary, fontSize: 13, height: 1.4),
+                            ),
+                          ],
+                        ),
+                      );
+                    }),
                   const SizedBox(height: 100),
                 ],
               ),

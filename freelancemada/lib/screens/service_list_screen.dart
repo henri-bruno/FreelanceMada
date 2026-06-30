@@ -110,7 +110,7 @@ class _ServiceListScreenState extends State<ServiceListScreen> {
           const SizedBox(height: 8),
           Expanded(
             child: Consumer<ServiceProvider>(
-              builder: (_, prov, __) {
+              builder: (_, prov, _) {
                 if (prov.loading && prov.services.isEmpty) {
                   return const Center(child: CircularProgressIndicator(color: AppConstants.goldColor));
                 }
@@ -201,7 +201,7 @@ class _ServiceCard extends StatelessWidget {
                   height: 160,
                   width: double.infinity,
                   fit: BoxFit.cover,
-                  errorBuilder: (_, __, ___) => _NoImage(),
+                  errorBuilder: (_, _, _) => _NoImage(),
                 ),
               )
             else

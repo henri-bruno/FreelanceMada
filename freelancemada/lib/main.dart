@@ -20,6 +20,7 @@ import 'screens/dashboard_screen.dart';
 import 'screens/create_mission_screen.dart';
 import 'screens/service_list_screen.dart';
 import 'screens/service_detail_screen.dart';
+import 'screens/create_service_screen.dart';
 import 'screens/contrats_screen.dart';
 import 'screens/notifications_screen.dart';
 import 'screens/freelance_list_screen.dart';
@@ -60,6 +61,7 @@ final _router = GoRouter(
 
     // Services
     GoRoute(path: '/services', builder: (ctx, _) => const ServiceListScreen()),
+    GoRoute(path: '/services/create', builder: (ctx, _) => const CreateServiceScreen()),
     GoRoute(
       path: '/services/:id',
       builder: (_, state) => ServiceDetailScreen(serviceId: int.parse(state.pathParameters['id']!)),
